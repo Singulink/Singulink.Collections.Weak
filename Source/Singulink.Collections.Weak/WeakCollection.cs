@@ -1,12 +1,12 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
 namespace Singulink.Collections
 {
     /// <summary>
-    /// Represents a collection of weakly referenced values that keeps items in an undefined order. If this collection is accessed from multiple threads, all
-    /// accesses must be synchronized with a lock.
+    /// Represents a collection of weakly referenced values that keeps items in an undefined order. If this collection is accessed concurrently from multiple
+    /// threads (even in a read-only manner) then all accesses must be synchronized with a full lock.
     /// </summary>
     /// <remarks>
     /// <para>Internal entries for garbage collected values are removed as they are encountered, i.e. as they are enumerated over. You can perform a full clean
@@ -53,14 +53,15 @@ namespace Singulink.Collections
         public bool TrimExcessDuringClean { get; set; }
 
         /// <summary>
-        /// Gets the approximate number of values in this collection. This value may be considerably off if there are lots of garbage collected values that
-        /// still have internal entries in the collection.
+        /// Gets the number of entries in the internal data structure. This value will be different than the actual count if any of the values were garbage
+        /// collected but still have internal entries in the collection that have not been cleaned.
         /// </summary>
         /// <remarks>
-        /// <para>This count may not be accurate if values have been collected since the last clean or enumeration. You can call <see cref="Clean"/> to force a
-        /// full sweep before reading the count to get a more accurate value. If you require an accurate count then you should copy the values into a new
-        /// strongly referenced collection (i.e. a list) so that they can't be garbage collected and use that collection to obtain the count and access the
-        /// values.</para>
+        /// <para>This count will not be accurate if values have been collected since the last clean. You can call <see cref="Clean"/> to force a full sweep
+        /// before reading the count to get a more accurate value, but keep in mind that a subsequent enumeration may still return fewer values if they happen
+        /// to get garbage collected before or during the enumeration. If you require an accurate count together with all the values then you should
+        /// temporarily copy the values into a strongly referenced collection (like a <see cref="List{T}"/>) so that they can't be garbage collected and use
+        /// that to get the count and access the values.</para>
         /// </remarks>
         public int UnreliableCount => _entries.Count;
 

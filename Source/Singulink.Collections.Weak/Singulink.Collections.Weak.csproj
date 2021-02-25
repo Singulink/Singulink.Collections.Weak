@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
@@ -8,7 +8,7 @@
     <PackageIcon>Singulink Icon 128x128.png</PackageIcon>
     <PackageProjectUrl>https://github.com/Singulink/Singulink.Collections.Weak</PackageProjectUrl>
     <PackageTags>weak, dictionary, value, collection, list</PackageTags>
-    <Description>Collection classes that store weak references to the values so that they can be garbage collected when they are no longer needed.</Description>
+    <Description>Collection classes that store weak references to values so that they can be garbage collected when they are no longer needed.</Description>
     <Copyright>© Singulink. All rights reserved.</Copyright>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>key.snk</AssemblyOriginatorKeyFile>
