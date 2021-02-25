@@ -110,7 +110,7 @@ namespace Singulink.Collections
         /// <param name="item">The item to insert.</param>
         /// <param name="beforeItem">The item to find to determine the insertion point.</param>
         /// <param name="comparer">The comparer to use to determine item equality.</param>
-        /// <returns><see langword="true"/> if the item to insert after was found and the item was inserted, otherwise <see langword="false"/></returns>
+        /// <returns><see langword="true"/> if the item to insert after was found and the item was inserted, otherwise <see langword="false"/>.</returns>
         public bool TryInsertBefore(T item, T beforeItem, IEqualityComparer<T>? comparer = null)
         {
             comparer ??= EqualityComparer<T>.Default;
@@ -131,7 +131,7 @@ namespace Singulink.Collections
         /// <param name="item">The item to insert.</param>
         /// <param name="afterItem">The item to find to determine the insertion point.</param>
         /// <param name="comparer">The comparer to use to determine item equality.</param>
-        /// <returns><see langword="true"/> if the item to insert after was found and the item was inserted, otherwise <see langword="false"/></returns>
+        /// <returns><see langword="true"/> if the item to insert after was found and the item was inserted, otherwise <see langword="false"/>.</returns>
         public bool TryInsertAfter(T item, T afterItem, IEqualityComparer<T>? comparer = null)
         {
             comparer ??= EqualityComparer<T>.Default;

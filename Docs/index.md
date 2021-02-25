@@ -7,7 +7,7 @@ The following collections are included in the package:
 - `WeakList`: Collection of weakly referenced values that maintains relative insertion order.
 - `WeakValueDictionary`: Collection of keys and weakly referenced values.
 
-**Singulink.Numerics.BigDecimal** is part of the **Singulink Libraries** collection. Visit https://github.com/Singulink/ to see the full list of libraries available.
+**Singulink.Collections.Weak** is part of the **Singulink Libraries** collection. Visit https://github.com/Singulink/ to see the full list of libraries available.
 
 ## Information and Links
 
