@@ -77,16 +77,10 @@ namespace Singulink.Collections
         }
 
         /// <summary>
-        /// Removes an item from the collection using the default equality comparer.
-        /// </summary>
-        /// <returns><see langword="true"/> if the item was removed, otherwise <see langword="false"/>.</returns>
-        public bool Remove(T item) => Remove(item, null);
-
-        /// <summary>
         /// Removes an item from the collection using the specified equality comparer.
         /// </summary>
         /// <returns><see langword="true"/> if the item was removed, otherwise <see langword="false"/>.</returns>
-        public bool Remove(T item, IEqualityComparer<T>? comparer)
+        public bool Remove(T item, IEqualityComparer<T>? comparer = null)
         {
             comparer ??= EqualityComparer<T>.Default;
 
@@ -106,14 +100,9 @@ namespace Singulink.Collections
         }
 
         /// <summary>
-        /// Determines whether the collection contains the given item.
-        /// </summary>
-        public bool Contains(T item) => Contains(item, null);
-
-        /// <summary>
         /// Determines whether the collection contains the given item using the specified equality comparer.
         /// </summary>
-        public bool Contains(T item, IEqualityComparer<T>? comparer)
+        public bool Contains(T item, IEqualityComparer<T>? comparer = null)
         {
             comparer ??= EqualityComparer<T>.Default;
 
