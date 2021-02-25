@@ -105,7 +105,20 @@ namespace Singulink.Collections
         }
 
         /// <summary>
-        /// Attempts to insert an item before another item and returns a value indicating whether it was successful.
+        /// Inserts an item before another item and returns a value indicating whether it was successful.
+        /// </summary>
+        /// <param name="item">The item to insert.</param>
+        /// <param name="beforeItem">The item to find to determine the insertion point.</param>
+        /// <param name="comparer">The comparer to use to determine item equality.</param>
+        /// <exception cref="ArgumentException">The item to insert before was not found.</exception>
+        public void InsertBefore(T item, T beforeItem, IEqualityComparer<T>? comparer = null)
+        {
+            if (!TryInsertBefore(item, beforeItem, comparer))
+                throw new ArgumentException("The specified item was not found.", nameof(beforeItem));
+        }
+
+        /// <summary>
+        /// Inserts an item before another item and returns a value indicating whether it was successful.
         /// </summary>
         /// <param name="item">The item to insert.</param>
         /// <param name="beforeItem">The item to find to determine the insertion point.</param>
@@ -118,6 +131,7 @@ namespace Singulink.Collections
             for (int i = 0; i < _entries.Count; i++) {
                 if (_entries[i].TryGetTarget(out var currentItem) && comparer.Equals(currentItem, beforeItem)) {
                     _entries.Insert(i, new WeakReference<T>(item));
+                    OnAdded();
                     return true;
                 }
             }
@@ -126,7 +140,20 @@ namespace Singulink.Collections
         }
 
         /// <summary>
-        /// Attempts to insert an item after another item and returns a value indicating whether it was successful.
+        /// Inserts an item after another item and returns a value indicating whether it was successful.
+        /// </summary>
+        /// <param name="item">The item to insert.</param>
+        /// <param name="afterItem">The item to find to determine the insertion point.</param>
+        /// <param name="comparer">The comparer to use to determine item equality.</param>
+        /// <exception cref="ArgumentException">The item to insert after was not found.</exception>
+        public void InsertAfter(T item, T afterItem, IEqualityComparer<T>? comparer = null)
+        {
+            if (!TryInsertAfter(item, afterItem, comparer))
+                throw new ArgumentException("The specified item was not found.", nameof(afterItem));
+        }
+
+        /// <summary>
+        /// Inserts an item after another item and returns a value indicating whether it was successful.
         /// </summary>
         /// <param name="item">The item to insert.</param>
         /// <param name="afterItem">The item to find to determine the insertion point.</param>
@@ -139,6 +166,7 @@ namespace Singulink.Collections
             for (int i = 0; i < _entries.Count; i++) {
                 if (_entries[i].TryGetTarget(out var currentItem) && comparer.Equals(currentItem, afterItem)) {
                     _entries.Insert(i + 1, new WeakReference<T>(item));
+                    OnAdded();
                     return true;
                 }
             }
