@@ -14,8 +14,7 @@ namespace Singulink.Collections
     /// by calling the <see cref="Clean"/> method or configure automatic cleaning after a set number of add operations by setting the <see
     /// cref="AutoCleanAddCount"/> property.</para>
     /// </remarks>
-    [SuppressMessage("Design", "CA1010:Generic interface should also be implemented", Justification = "Unsafe ICollection<T> behavior - see https://github.com/dotnet/runtime/issues/48805")]
-    public sealed class WeakCollection<T> : IReadOnlyCollection<T>, ICollection where T : class
+    public sealed class WeakCollection<T> : IEnumerable<T> where T : class
     {
         private readonly HashSet<WeakReference<T>> _entries = new();
 
@@ -65,7 +64,7 @@ namespace Singulink.Collections
         /// temporarily copy the values into a strongly referenced collection (like a <see cref="List{T}"/>) so that they can't be garbage collected and use
         /// that to get the count and access the values.</para>
         /// </remarks>
-        public int Count => _entries.Count;
+        public int UnsafeCount => _entries.Count;
 
         /// <summary>
         /// Adds an item to the collection.
@@ -78,12 +77,6 @@ namespace Singulink.Collections
             if (_autoCleanAddCount != 0 && _addCountSinceLastClean >= _autoCleanAddCount)
                 Clean();
         }
-
-        /// <summary>
-        /// Removes an item from the collection using the default equality comparer.
-        /// </summary>
-        /// <returns><see langword="true"/> if the item was removed, otherwise <see langword="false"/>.</returns>
-        public bool Remove(T item) => Remove(item, null);
 
         /// <summary>
         /// Removes an item from the collection using the specified equality comparer.
@@ -107,11 +100,6 @@ namespace Singulink.Collections
 
             return false;
         }
-
-        /// <summary>
-        /// Determines whether the collection contains the given item using the default equality comparer.
-        /// </summary>
-        public bool Contains(T item) => Contains(item, null);
 
         /// <summary>
         /// Determines whether the collection contains the given item using the specified equality comparer.
@@ -143,25 +131,14 @@ namespace Singulink.Collections
         }
 
         /// <summary>
-        /// Copies the values in the collection to an array starting at a particular array index and returns the number of items copied.
-        /// </summary>
-        public int CopyTo(T[] array, int arrayIndex)
-        {
-            int i = arrayIndex;
-
-            foreach (var value in this) {
-                array[i++] = value;
-            }
-
-            return i - arrayIndex;
-        }
-
-        /// <summary>
         /// Removes internal entries for values that have been garbage collected and trims the excess if <see cref="TrimExcessDuringClean"/> is set.
         /// </summary>
         public void Clean()
         {
-            CleanWithoutTrim();
+            foreach (var entry in _entries) {
+                if (!entry.TryGetTarget(out _))
+                    _entries.Remove(entry);
+            }
 
             if (TrimExcessDuringClean)
                 TrimExcess();
@@ -194,28 +171,7 @@ namespace Singulink.Collections
             _addCountSinceLastClean = 0;
         }
 
-        #region Explicit Interface Implementations
-
-        /// <inheritdoc/>
-        bool ICollection.IsSynchronized => false;
-
-        /// <inheritdoc/>
-        object ICollection.SyncRoot => throw new NotSupportedException();
-
         /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-        private void CleanWithoutTrim()
-        {
-            foreach (var entry in _entries) {
-                if (!entry.TryGetTarget(out _))
-                    _entries.Remove(entry);
-            }
-        }
-
-        /// <inheritdoc/>
-        void ICollection.CopyTo(Array array, int index) => throw new NotSupportedException();
-
-        #endregion
     }
 }
