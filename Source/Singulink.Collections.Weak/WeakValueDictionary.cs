@@ -256,11 +256,6 @@ namespace Singulink.Collections
             _addCountSinceLastClean = 0;
         }
 
-        /// <summary>
-        /// Returns an enumerator that iterates through the key/value pairs in the dictionary.
-        /// </summary>
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
         private void OnAdded()
         {
             _addCountSinceLastClean++;
@@ -268,5 +263,10 @@ namespace Singulink.Collections
             if (_autoCleanAddCount != 0 && _addCountSinceLastClean >= _autoCleanAddCount)
                 Clean();
         }
+
+        /// <summary>
+        /// Returns an enumerator that iterates through the key/value pairs in the dictionary.
+        /// </summary>
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

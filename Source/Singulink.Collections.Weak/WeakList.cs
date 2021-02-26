@@ -261,7 +261,9 @@ namespace Singulink.Collections
                 Clean();
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

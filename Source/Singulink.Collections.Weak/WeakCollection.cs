@@ -171,7 +171,9 @@ namespace Singulink.Collections
             _addCountSinceLastClean = 0;
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
