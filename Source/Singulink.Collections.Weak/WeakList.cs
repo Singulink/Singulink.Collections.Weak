@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Singulink.Collections
 {
@@ -13,7 +14,9 @@ namespace Singulink.Collections
     /// cref="Clean"/> method or configure automatic cleaning after a set number of <see cref="Add(T)"/> operations by setting the <see
     /// cref="AutoCleanAddCount"/> property.</para>
     /// </remarks>
-    public sealed class WeakList<T> : IEnumerable<T> where T : class
+    [SuppressMessage("Design", "CA1010:Generic interface should also be implemented", Justification = "Unsafe ICollection<T> behavior - see https://github.com/dotnet/runtime/issues/48805")]
+    [SuppressMessage("Naming", "CA1710:Identifiers should have correct suffix", Justification = "Naming is correct")]
+    public sealed class WeakList<T> : IReadOnlyCollection<T>, ICollection where T : class
     {
         private readonly List<WeakReference<T>> _entries = new List<WeakReference<T>>();
 
@@ -77,7 +80,7 @@ namespace Singulink.Collections
         /// temporarily copy the values into a strongly referenced collection (like a <see cref="List{T}"/>) so that they can't be garbage collected and use
         /// that to get the count and access the values.</para>
         /// </remarks>
-        public int UnreliableCount => _entries.Count;
+        public int Count => _entries.Count;
 
         /// <summary>
         /// Gets or sets the total number of elements the internal data structure can hold without resizing.
@@ -179,6 +182,12 @@ namespace Singulink.Collections
         /// Removes an item from the collection using the specified equality comparer.
         /// </summary>
         /// <returns><see langword="true"/> if the item was removed, otherwise <see langword="false"/>.</returns>
+        public bool Remove(T item) => Remove(item, null);
+
+        /// <summary>
+        /// Removes an item from the collection using the specified equality comparer.
+        /// </summary>
+        /// <returns><see langword="true"/> if the item was removed, otherwise <see langword="false"/>.</returns>
         public bool Remove(T item, IEqualityComparer<T>? comparer = null)
         {
             comparer ??= EqualityComparer<T>.Default;
@@ -211,7 +220,11 @@ namespace Singulink.Collections
         /// <summary>
         /// Removes all the elements from the collection.
         /// </summary>
-        public void Clear() => _entries.Clear();
+        public void Clear()
+        {
+            _entries.Clear();
+            _addCountSinceLastClean = 0;
+        }
 
         /// <summary>
         /// Removes internal entries for values that have been garbage collected and trims the excess if <see cref="TrimExcessDuringClean"/> is set.
@@ -248,11 +261,6 @@ namespace Singulink.Collections
             }
         }
 
-        /// <summary>
-        /// Returns an enumerator that iterates through the collection.
-        /// </summary>
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
         private void OnAdded()
         {
             _addCountSinceLastClean++;
@@ -260,5 +268,21 @@ namespace Singulink.Collections
             if (_autoCleanAddCount != 0 && _addCountSinceLastClean >= _autoCleanAddCount)
                 Clean();
         }
+
+        #region Explicit Interface Implementations
+
+        /// <inheritdoc/>
+        bool ICollection.IsSynchronized => false;
+
+        /// <inheritdoc/>
+        object ICollection.SyncRoot => throw new NotSupportedException();
+
+        /// <inheritdoc/>
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        /// <inheritdoc/>
+        void ICollection.CopyTo(Array array, int index) => throw new NotSupportedException();
+
+        #endregion
     }
 }

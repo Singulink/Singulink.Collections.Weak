@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
@@ -15,7 +16,8 @@ namespace Singulink.Collections
     /// or if all the keys/values are enumerated. You can perform a full clean by calling the <see cref="Clean"/> method or configure automatic cleaning after
     /// a set number of add operations by setting the <see cref="AutoCleanAddCount"/> property.</para>
     /// </remarks>
-    public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
+    [SuppressMessage("Design", "CA1010:Generic interface should also be implemented", Justification = "Unsafe ICollection<T> behavior - see https://github.com/dotnet/runtime/issues/48805")]
+    public class WeakValueDictionary<TKey, TValue> : IReadOnlyDictionary<TKey, TValue>, IDictionary
         where TKey : notnull
         where TValue : class
     {
@@ -84,7 +86,7 @@ namespace Singulink.Collections
         /// temporarily copy the values into a strongly referenced collection (like a <see cref="List{T}"/> or <see cref="Dictionary{TKey, TValue}"/>) so that
         /// they can't be garbage collected and use that to get the count and access the values.</para>
         /// </remarks>
-        public int UnreliableCount => _entryLookup.Count;
+        public int Count => _entryLookup.Count;
 
         /// <summary>
         /// Gets or sets the value associated with the specified key.
@@ -221,6 +223,15 @@ namespace Singulink.Collections
         }
 
         /// <summary>
+        /// Removes all keys and values from the dictionary.
+        /// </summary>
+        public void Clear()
+        {
+            _entryLookup.Clear();
+            _addCountSinceLastClean = 0;
+        }
+
+        /// <summary>
         /// Removes internal entries that refer to values that have been garbage collected.
         /// </summary>
         public void Clean()
@@ -271,5 +282,81 @@ namespace Singulink.Collections
             if (_autoCleanAddCount != 0 && _addCountSinceLastClean >= _autoCleanAddCount)
                 Clean();
         }
+
+        #region Explicit Interface Implementations
+
+        /// <inheritdoc/>
+        bool IDictionary.IsFixedSize => false;
+
+        /// <inheritdoc/>
+        bool IDictionary.IsReadOnly => false;
+
+        /// <inheritdoc/>
+        ICollection IDictionary.Keys => new ReadOnlyCollection<TKey>(Keys.ToList());
+
+        /// <inheritdoc/>
+        ICollection IDictionary.Values => new ReadOnlyCollection<TValue>(Values.ToList());
+
+        /// <inheritdoc/>
+        bool ICollection.IsSynchronized => false;
+
+        /// <inheritdoc/>
+        object ICollection.SyncRoot => throw new NotSupportedException();
+
+        /// <inheritdoc/>
+        object? IDictionary.this[object key] {
+            get => this[(TKey)key];
+            set => this[(TKey)key] = (TValue)value!;
+        }
+
+        /// <inheritdoc/>
+        void IDictionary.Add(object key, object? value) => Add((TKey)key, (TValue)value!);
+
+        /// <inheritdoc/>
+        bool IDictionary.Contains(object key) => ContainsKey((TKey)key);
+
+        /// <inheritdoc/>
+        void IDictionary.Remove(object key) => Remove((TKey)key);
+
+        /// <inheritdoc/>
+        IDictionaryEnumerator IDictionary.GetEnumerator() => new NonGenericEnumerator(GetEnumerator());
+
+        /// <inheritdoc/>
+        void ICollection.CopyTo(Array array, int index) => throw new NotSupportedException();
+
+        private class NonGenericEnumerator : IDictionaryEnumerator
+        {
+            private readonly IEnumerator<KeyValuePair<TKey, TValue>> _enumerator;
+            private KeyValuePair<TKey, TValue> _current;
+            private bool _finished;
+
+            public NonGenericEnumerator(IEnumerator<KeyValuePair<TKey, TValue>> enumerator)
+            {
+                _enumerator = enumerator;
+            }
+
+            public DictionaryEntry Entry => !_finished ? new DictionaryEntry(Key, Value) : throw new InvalidOperationException();
+
+            public object Key => !_finished ? _current.Key : throw new InvalidOperationException();
+
+            public object? Value => !_finished ? _current.Value : throw new InvalidOperationException();
+
+            public object Current => !_finished ? _current : throw new InvalidOperationException();
+
+            public bool MoveNext()
+            {
+                if (!_enumerator.MoveNext()) {
+                    _finished = true;
+                    return false;
+                }
+
+                _current = _enumerator.Current;
+                return true;
+            }
+
+            public void Reset() => throw new NotSupportedException();
+        }
+
+        #endregion
     }
 }

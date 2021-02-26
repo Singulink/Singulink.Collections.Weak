@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Singulink.Collections
 {
@@ -13,7 +14,8 @@ namespace Singulink.Collections
     /// by calling the <see cref="Clean"/> method or configure automatic cleaning after a set number of add operations by setting the <see
     /// cref="AutoCleanAddCount"/> property.</para>
     /// </remarks>
-    public sealed class WeakCollection<T> : IEnumerable<T> where T : class
+    [SuppressMessage("Design", "CA1010:Generic interface should also be implemented", Justification = "Unsafe ICollection<T> behavior - see https://github.com/dotnet/runtime/issues/48805")]
+    public sealed class WeakCollection<T> : IReadOnlyCollection<T>, ICollection where T : class
     {
         private readonly HashSet<WeakReference<T>> _entries = new();
 
@@ -53,8 +55,8 @@ namespace Singulink.Collections
         public bool TrimExcessDuringClean { get; set; }
 
         /// <summary>
-        /// Gets the number of entries in the internal data structure. This value will be different than the actual count if any of the values were garbage
-        /// collected but still have internal entries in the collection that have not been cleaned.
+        /// Gets the number of entries in the internal data structure. This value will be higher than the actual number of values in the collection if any of
+        /// the values were garbage collected but still have internal entries in the collection that have not been cleaned.
         /// </summary>
         /// <remarks>
         /// <para>This count will not be accurate if values have been collected since the last clean. You can call <see cref="Clean"/> to force a full sweep
@@ -63,7 +65,7 @@ namespace Singulink.Collections
         /// temporarily copy the values into a strongly referenced collection (like a <see cref="List{T}"/>) so that they can't be garbage collected and use
         /// that to get the count and access the values.</para>
         /// </remarks>
-        public int UnreliableCount => _entries.Count;
+        public int Count => _entries.Count;
 
         /// <summary>
         /// Adds an item to the collection.
@@ -76,6 +78,12 @@ namespace Singulink.Collections
             if (_autoCleanAddCount != 0 && _addCountSinceLastClean >= _autoCleanAddCount)
                 Clean();
         }
+
+        /// <summary>
+        /// Removes an item from the collection using the default equality comparer.
+        /// </summary>
+        /// <returns><see langword="true"/> if the item was removed, otherwise <see langword="false"/>.</returns>
+        public bool Remove(T item) => Remove(item, null);
 
         /// <summary>
         /// Removes an item from the collection using the specified equality comparer.
@@ -101,6 +109,11 @@ namespace Singulink.Collections
         }
 
         /// <summary>
+        /// Determines whether the collection contains the given item using the default equality comparer.
+        /// </summary>
+        public bool Contains(T item) => Contains(item, null);
+
+        /// <summary>
         /// Determines whether the collection contains the given item using the specified equality comparer.
         /// </summary>
         public bool Contains(T item, IEqualityComparer<T>? comparer = null)
@@ -123,17 +136,32 @@ namespace Singulink.Collections
         /// <summary>
         /// Removes all the elements from the collection.
         /// </summary>
-        public void Clear() => _entries.Clear();
+        public void Clear()
+        {
+            _entries.Clear();
+            _addCountSinceLastClean = 0;
+        }
+
+        /// <summary>
+        /// Copies the values in the collection to an array starting at a particular array index and returns the number of items copied.
+        /// </summary>
+        public int CopyTo(T[] array, int arrayIndex)
+        {
+            int i = arrayIndex;
+
+            foreach (var value in this) {
+                array[i++] = value;
+            }
+
+            return i - arrayIndex;
+        }
 
         /// <summary>
         /// Removes internal entries for values that have been garbage collected and trims the excess if <see cref="TrimExcessDuringClean"/> is set.
         /// </summary>
         public void Clean()
         {
-            foreach (var entry in _entries) {
-                if (!entry.TryGetTarget(out var item))
-                    _entries.Remove(entry);
-            }
+            CleanWithoutTrim();
 
             if (TrimExcessDuringClean)
                 TrimExcess();
@@ -166,9 +194,28 @@ namespace Singulink.Collections
             _addCountSinceLastClean = 0;
         }
 
-        /// <summary>
-        /// Returns an enumerator that iterates through the collection.
-        /// </summary>
+        #region Explicit Interface Implementations
+
+        /// <inheritdoc/>
+        bool ICollection.IsSynchronized => false;
+
+        /// <inheritdoc/>
+        object ICollection.SyncRoot => throw new NotSupportedException();
+
+        /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        private void CleanWithoutTrim()
+        {
+            foreach (var entry in _entries) {
+                if (!entry.TryGetTarget(out _))
+                    _entries.Remove(entry);
+            }
+        }
+
+        /// <inheritdoc/>
+        void ICollection.CopyTo(Array array, int index) => throw new NotSupportedException();
+
+        #endregion
     }
 }
