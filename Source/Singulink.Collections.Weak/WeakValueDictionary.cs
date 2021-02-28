@@ -11,9 +11,9 @@ namespace Singulink.Collections
     /// manner) then all accesses must be synchronized with a full lock.
     /// </summary>
     /// <remarks>
-    /// <para>On .NET Core 3+ and .NET 5+ internal entries for garbage collected values are removed as they are encountered, i.e. if a key lookup is performed
-    /// on a garbage collected value or if all the keys/values are enumerated. This is not the case on .NET Framework and Mono. You can perform a full clean by
-    /// calling the <see cref="Clean"/> method or configure automatic cleaning after a set number of add operations by setting the <see
+    /// <para>On .NET Core 3+ and .NET 5+ internal entries for garbage collected values are removed as they are encountered (i.e. if a key lookup is performed
+    /// on a garbage collected value or if keys/values are enumerated over). This is not the case on .NET Framework and Mono. You can perform a full clean
+    /// by calling the <see cref="Clean"/> method or configure automatic cleaning after a set number of add operations by setting the <see
     /// cref="AutoCleanAddCount"/> property.</para>
     /// </remarks>
     public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>

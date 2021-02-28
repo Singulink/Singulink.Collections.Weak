@@ -10,7 +10,7 @@ namespace Singulink.Collections
     /// threads (even in a read-only manner) then all accesses must be synchronized with a full lock.
     /// </summary>
     /// <remarks>
-    /// <para>On .NET Core 3+ and .NET 5+ internal entries for garbage collected values are removed as they are encountered, i.e. as they are enumerated over.
+    /// <para>On .NET Core 3+ and .NET 5+, internal entries for garbage collected values are removed as they are encountered (i.e. as they are enumerated over).
     /// This is not the case on .NET Framework and Mono. You can perform a full clean by calling the <see cref="Clean"/> method or configure automatic cleaning
     /// after a set number of add operations by setting the <see cref="AutoCleanAddCount"/> property.</para>
     /// </remarks>
@@ -180,7 +180,7 @@ namespace Singulink.Collections
         public void TrimExcess() => _entries.TrimExcess();
 
         /// <summary>
-        /// Ensures that this collection can hold the specified number of elements without growing. This method has no effect on .NET Framework.
+        /// Ensures that this collection can hold the specified number of elements without growing.
         /// </summary>
         /// <remarks>
         /// <para>Calling this method on the .NET Standard 2.0 version of the library (i.e. on .NET Framework or .NET Core 2.2) has no effect.</para>

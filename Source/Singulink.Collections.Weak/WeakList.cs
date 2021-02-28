@@ -154,7 +154,7 @@ namespace Singulink.Collections
         }
 
         /// <summary>
-        /// Inserts an item after another item and returns a value indicating whether it was successful.
+        /// Inserts an item after another item.
         /// </summary>
         /// <param name="findItem">The item to find to determine the insertion point.</param>
         /// <param name="item">The item to insert.</param>
