@@ -66,7 +66,7 @@ namespace Singulink.Collections.Weak.Tests
             Assert.IsTrue(c.Remove(1));
             Assert.IsFalse(c.Remove(4));
 
-            #if NETFRAMEWORK || NETCOREAPP2_2 // .NET Framework/Mono target does not support removing stale entries as items are encountered.
+            #if NETCOREAPP2_2 // NS2.0 target does not support removing stale entries as items are encountered.
             Assert.AreEqual(6, c.AddCountSinceLastClean);
             Assert.AreEqual(4, c.UnsafeCount);
             #else
