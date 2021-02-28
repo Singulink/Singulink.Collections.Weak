@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 
 namespace Singulink.Collections
 {
@@ -10,13 +10,18 @@ namespace Singulink.Collections
     /// threads (even in a read-only manner) then all accesses must be synchronized with a full lock.
     /// </summary>
     /// <remarks>
-    /// <para>Internal entries for garbage collected values are removed as they are encountered, i.e. as they are enumerated over. You can perform a full clean
-    /// by calling the <see cref="Clean"/> method or configure automatic cleaning after a set number of add operations by setting the <see
-    /// cref="AutoCleanAddCount"/> property.</para>
+    /// <para>On .NET Core 3+ and .NET 5+ internal entries for garbage collected values are removed as they are encountered, i.e. as they are enumerated over.
+    /// This is not the case on .NET Framework and Mono. You can perform a full clean by calling the <see cref="Clean"/> method or configure automatic cleaning
+    /// after a set number of add operations by setting the <see cref="AutoCleanAddCount"/> property.</para>
     /// </remarks>
     public sealed class WeakCollection<T> : IEnumerable<T> where T : class
     {
+        #if NET || NETSTANDARD
         private readonly HashSet<WeakReference<T>> _entries = new();
+        #else
+        // Use dictionary instead of HashSet because HashSet can't remove while enumerating before net5.
+        private readonly Dictionary<WeakReference<T>, Void> _entries = new();
+        #endif
 
         private int _autoCleanAddCount;
         private int _addCountSinceLastClean;
@@ -39,7 +44,7 @@ namespace Singulink.Collections
                     throw new ArgumentOutOfRangeException(nameof(value));
 
                 _autoCleanAddCount = value.GetValueOrDefault();
-            }
+                }
         }
 
         /// <summary>
@@ -71,7 +76,12 @@ namespace Singulink.Collections
         /// </summary>
         public void Add(T item)
         {
+            #if NET || NETSTANDARD
             _entries.Add(new WeakReference<T>(item));
+            #else
+            _entries.Add(new WeakReference<T>(item), default);
+            #endif
+
             _addCountSinceLastClean++;
 
             if (_autoCleanAddCount != 0 && _addCountSinceLastClean >= _autoCleanAddCount)
@@ -86,16 +96,22 @@ namespace Singulink.Collections
         {
             comparer ??= EqualityComparer<T>.Default;
 
+            #if NET || NETSTANDARD
             foreach (var entry in _entries) {
+            #else
+            foreach (var entry in _entries.Keys) {
+            #endif
                 if (entry.TryGetTarget(out var value)) {
                     if (comparer.Equals(value, item)) {
                         _entries.Remove(entry);
                         return true;
                     }
                 }
+                #if NETCOREAPP
                 else {
                     _entries.Remove(entry);
                 }
+                #endif
             }
 
             return false;
@@ -108,14 +124,20 @@ namespace Singulink.Collections
         {
             comparer ??= EqualityComparer<T>.Default;
 
+            #if NET || NETSTANDARD
             foreach (var entry in _entries) {
+            #else
+            foreach (var entry in _entries.Keys) {
+            #endif
                 if (entry.TryGetTarget(out var value)) {
                     if (comparer.Equals(value, item))
                         return true;
                 }
+                #if NETCOREAPP
                 else {
                     _entries.Remove(entry);
                 }
+                #endif
             }
 
             return false;
@@ -135,10 +157,16 @@ namespace Singulink.Collections
         /// </summary>
         public void Clean()
         {
-            foreach (var entry in _entries) {
-                if (!entry.TryGetTarget(out _))
-                    _entries.Remove(entry);
-            }
+            #if NET
+            var staleEntries = _entries.Where(e => !e.TryGetTarget(out _));
+            #elif NETCOREAPP
+            var staleEntries = _entries.Keys.Where(e => !e.TryGetTarget(out _));
+            #else
+            var staleEntries = _entries.Where(e => !e.TryGetTarget(out _)).ToList();
+            #endif
+
+            foreach (var entry in staleEntries)
+                _entries.Remove(entry);
 
             if (TrimExcessDuringClean)
                 TrimExcess();
@@ -152,23 +180,39 @@ namespace Singulink.Collections
         public void TrimExcess() => _entries.TrimExcess();
 
         /// <summary>
-        /// Ensures that this collection can hold the specified number of elements without growing.
+        /// Ensures that this collection can hold the specified number of elements without growing. This method has no effect on .NET Framework.
         /// </summary>
-        public void EnsureCapacity(int capacity) => _entries.EnsureCapacity(capacity);
+        /// <remarks>
+        /// <para>Calling this method on the .NET Standard 2.0 version of the library (i.e. on .NET Framework or .NET Core 2.2) has no effect.</para>
+        /// </remarks>
+        public void EnsureCapacity(int capacity)
+        {
+            #if !NETSTANDARD2_0
+            _entries.EnsureCapacity(capacity);
+            #endif
+        }
 
         /// <summary>
         /// Returns an enumerator that iterates through the collection.
         /// </summary>
         public IEnumerator<T> GetEnumerator()
         {
+            #if NET || NETSTANDARD
             foreach (var entry in _entries) {
+            #else
+            foreach (var entry in _entries.Keys) {
+            #endif
                 if (entry.TryGetTarget(out var item))
                     yield return item;
+                #if NETCOREAPP
                 else
                     _entries.Remove(entry);
+                #endif
             }
 
+            #if NETCOREAPP
             _addCountSinceLastClean = 0;
+            #endif
         }
 
         /// <summary>

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Singulink.Collections
 {
@@ -107,31 +106,31 @@ namespace Singulink.Collections
         }
 
         /// <summary>
-        /// Inserts an item before another item and returns a value indicating whether it was successful.
+        /// Inserts an item before another item.
         /// </summary>
+        /// <param name="findItem">The item to find to determine the insertion point.</param>
         /// <param name="item">The item to insert.</param>
-        /// <param name="beforeItem">The item to find to determine the insertion point.</param>
         /// <param name="comparer">The comparer to use to determine item equality.</param>
         /// <exception cref="ArgumentException">The item to insert before was not found.</exception>
-        public void InsertBefore(T item, T beforeItem, IEqualityComparer<T>? comparer = null)
+        public void InsertBefore(T findItem, T item, IEqualityComparer<T>? comparer = null)
         {
-            if (!TryInsertBefore(item, beforeItem, comparer))
-                throw new ArgumentException("The specified item was not found.", nameof(beforeItem));
+            if (!TryInsertBefore(findItem, item, comparer))
+                throw new ArgumentException("The specified item was not found.", nameof(findItem));
         }
 
         /// <summary>
-        /// Inserts an item before another item and returns a value indicating whether it was successful.
+        /// Inserts an item before another item.
         /// </summary>
+        /// <param name="findItem">The item to find to determine the insertion point.</param>
         /// <param name="item">The item to insert.</param>
-        /// <param name="beforeItem">The item to find to determine the insertion point.</param>
         /// <param name="comparer">The comparer to use to determine item equality.</param>
         /// <returns><see langword="true"/> if the item to insert after was found and the item was inserted, otherwise <see langword="false"/>.</returns>
-        public bool TryInsertBefore(T item, T beforeItem, IEqualityComparer<T>? comparer = null)
+        public bool TryInsertBefore(T findItem, T item, IEqualityComparer<T>? comparer = null)
         {
             comparer ??= EqualityComparer<T>.Default;
 
             for (int i = 0; i < _entries.Count; i++) {
-                if (_entries[i].TryGetTarget(out var currentItem) && comparer.Equals(currentItem, beforeItem)) {
+                if (_entries[i].TryGetTarget(out var currentItem) && comparer.Equals(currentItem, findItem)) {
                     _entries.Insert(i, new WeakReference<T>(item));
                     OnAdded();
                     return true;
@@ -142,31 +141,31 @@ namespace Singulink.Collections
         }
 
         /// <summary>
-        /// Inserts an item after another item and returns a value indicating whether it was successful.
+        /// Inserts an item after another item.
         /// </summary>
+        /// <param name="findItem">The item to find to determine the insertion point.</param>
         /// <param name="item">The item to insert.</param>
-        /// <param name="afterItem">The item to find to determine the insertion point.</param>
         /// <param name="comparer">The comparer to use to determine item equality.</param>
         /// <exception cref="ArgumentException">The item to insert after was not found.</exception>
-        public void InsertAfter(T item, T afterItem, IEqualityComparer<T>? comparer = null)
+        public void InsertAfter(T findItem, T item, IEqualityComparer<T>? comparer = null)
         {
-            if (!TryInsertAfter(item, afterItem, comparer))
-                throw new ArgumentException("The specified item was not found.", nameof(afterItem));
+            if (!TryInsertAfter(findItem, item, comparer))
+                throw new ArgumentException("The specified item was not found.", nameof(findItem));
         }
 
         /// <summary>
         /// Inserts an item after another item and returns a value indicating whether it was successful.
         /// </summary>
+        /// <param name="findItem">The item to find to determine the insertion point.</param>
         /// <param name="item">The item to insert.</param>
-        /// <param name="afterItem">The item to find to determine the insertion point.</param>
         /// <param name="comparer">The comparer to use to determine item equality.</param>
         /// <returns><see langword="true"/> if the item to insert after was found and the item was inserted, otherwise <see langword="false"/>.</returns>
-        public bool TryInsertAfter(T item, T afterItem, IEqualityComparer<T>? comparer = null)
+        public bool TryInsertAfter(T findItem, T item, IEqualityComparer<T>? comparer = null)
         {
             comparer ??= EqualityComparer<T>.Default;
 
             for (int i = 0; i < _entries.Count; i++) {
-                if (_entries[i].TryGetTarget(out var currentItem) && comparer.Equals(currentItem, afterItem)) {
+                if (_entries[i].TryGetTarget(out var currentItem) && comparer.Equals(currentItem, findItem)) {
                     _entries.Insert(i + 1, new WeakReference<T>(item));
                     OnAdded();
                     return true;

@@ -268,7 +268,7 @@ dotnet_diagnostic.SA1202.severity = none
 dotnet_diagnostic.SA1133.severity = none
 
 # SA1611: Element parameters should be documented
-dotnet_diagnostic.SA1611.severity = silent
+dotnet_diagnostic.SA1611.severity = suggestion
 
 # SA1633: File should have header
 dotnet_diagnostic.SA1633.severity = silent
@@ -332,3 +332,6 @@ dotnet_diagnostic.SA1519.severity = silent
 
 # SA1214: Readonly fields should appear before non-readonly fields
 dotnet_diagnostic.SA1214.severity = suggestion
+
+# CA1801: Review unused parameters
+dotnet_diagnostic.CA1801.severity = suggestion

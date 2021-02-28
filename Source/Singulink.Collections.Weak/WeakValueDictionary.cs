@@ -11,9 +11,10 @@ namespace Singulink.Collections
     /// manner) then all accesses must be synchronized with a full lock.
     /// </summary>
     /// <remarks>
-    /// <para>Internal entries for garbage collected values are removed as they are encountered, i.e. if a key lookup is performed on a garbage collected value
-    /// or if all the keys/values are enumerated. You can perform a full clean by calling the <see cref="Clean"/> method or configure automatic cleaning after
-    /// a set number of add operations by setting the <see cref="AutoCleanAddCount"/> property.</para>
+    /// <para>On .NET Core 3+ and .NET 5+ internal entries for garbage collected values are removed as they are encountered, i.e. if a key lookup is performed
+    /// on a garbage collected value or if all the keys/values are enumerated. This is not the case on .NET Framework and Mono. You can perform a full clean by
+    /// calling the <see cref="Clean"/> method or configure automatic cleaning after a set number of add operations by setting the <see
+    /// cref="AutoCleanAddCount"/> property.</para>
     /// </remarks>
     public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
         where TKey : notnull
@@ -61,6 +62,9 @@ namespace Singulink.Collections
         /// Gets or sets a value indicating whether to automatically call <see cref="TrimExcess"/> whenever <see cref="Clean"/> is called. Default value is
         /// <see langword="false"/>.
         /// </summary>
+        /// <remarks>
+        /// <para>Setting this property on the .NET Standard 2.0 version of the library (i.e. on .NET Framework or .NET Core 2.2) has no effect.</para>
+        /// </remarks>
         public bool TrimExcessDuringClean { get; set; }
 
         /// <summary>
@@ -103,21 +107,36 @@ namespace Singulink.Collections
         }
 
         /// <summary>
+        /// Gets the value associated with the specified key.
+        /// </summary>
+        /// <param name="key">The key of the value to get.</param>
+        /// <param name="value">The value associated with the specified key, otherwise <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the dictionary contains a value with the specified key, otherwise <see langword="false"/>.</returns>
+        public bool TryGetValue(TKey key, [NotNullWhen(true)] out TValue? value)
+        {
+            if (_entryLookup.TryGetValue(key, out var entry)) {
+                if (entry.TryGetTarget(out value))
+                    return true;
+                #if NETCOREAPP
+                else
+                    _entryLookup.Remove(key);
+                #endif
+            }
+
+            value = null;
+            return false;
+        }
+
+        /// <summary>
         /// Adds the specified key and value to the dictionary.
         /// </summary>
         public bool TryAdd(TKey key, TValue value)
         {
-            if (_entryLookup.TryAdd(key, new WeakReference<TValue>(value))) {
-                OnAdded();
-                return true;
-            }
-
-            if (!_entryLookup.TryGetValue(key, out var entry) || entry.TryGetTarget(out _))
+            if (_entryLookup.TryGetValue(key, out var entry) && entry.TryGetTarget(out _))
                 return false;
 
-            entry.SetTarget(value);
+            _entryLookup[key] = new WeakReference<TValue>(value);
             OnAdded();
-
             return true;
         }
 
@@ -135,29 +154,16 @@ namespace Singulink.Collections
         /// Removes the value with the specified key from the dictionary.
         /// </summary>
         /// <returns><see langword="true"/> if the item was found and removed, otherwise <see langword="false"/>.</returns>
-        public bool Remove(TKey key)
-        {
-            if (_entryLookup.Remove(key, out var entry) && entry.TryGetTarget(out _))
-                return true;
-
-            return false;
-        }
+        public bool Remove(TKey key) => TryGetValue(key, out _) && _entryLookup.Remove(key);
 
         /// <summary>
         /// Removes the entry with the given key and value from the dictionary using the specified equality comparer for the value type.
         /// </summary>
         public bool Remove(TKey key, TValue value, IEqualityComparer<TValue>? comparer = null)
         {
-            if (_entryLookup.TryGetValue(key, out var entry)) {
-                if (entry.TryGetTarget(out var current)) {
-                    if ((comparer ?? EqualityComparer<TValue>.Default).Equals(value, current)) {
-                        _entryLookup.Remove(key);
-                        return true;
-                    }
-                }
-                else {
-                    _entryLookup.Remove(key);
-                }
+            if (TryGetValue(key, out var current) && (comparer ?? EqualityComparer<TValue>.Default).Equals(value, current)) {
+                _entryLookup.Remove(key);
+                return true;
             }
 
             return false;
@@ -173,10 +179,7 @@ namespace Singulink.Collections
         /// </summary>
         public bool Contains(TKey key, TValue value, IEqualityComparer<TValue>? comparer = null)
         {
-            if (_entryLookup.TryGetValue(key, out var entry) && entry.TryGetTarget(out var current))
-                return (comparer ?? EqualityComparer<TValue>.Default).Equals(value, current);
-
-            return false;
+            return TryGetValue(key, out var current) && (comparer ?? EqualityComparer<TValue>.Default).Equals(value, current);
         }
 
         /// <summary>
@@ -188,25 +191,6 @@ namespace Singulink.Collections
         /// Determines whether the dictionary contains the specified value.
         /// </summary>
         public bool ContainsValue(TValue value, IEqualityComparer<TValue>? comparer = null) => Values.Contains(value, comparer);
-
-        /// <summary>
-        /// Gets the value associated with the specified key.
-        /// </summary>
-        /// <param name="key">The key of the value to get.</param>
-        /// <param name="value">The value associated with the specified key, otherwise <see langword="null"/>.</param>
-        /// <returns><see langword="true"/> if the dictionary contains a value with the specified key, otherwise <see langword="false"/>.</returns>
-        public bool TryGetValue(TKey key, [NotNullWhen(true)] out TValue? value)
-        {
-            if (_entryLookup.TryGetValue(key, out var entry)) {
-                if (entry.TryGetTarget(out value))
-                    return true;
-                else
-                    _entryLookup.Remove(key);
-            }
-
-            value = null;
-            return false;
-        }
 
         /// <summary>
         /// Removes all keys and values from the dictionary.
@@ -222,11 +206,19 @@ namespace Singulink.Collections
         /// </summary>
         public void Clean()
         {
-            foreach (var kvp in _entryLookup.Where(kvp => !kvp.Value.TryGetTarget(out _)))
+            #if NETSTANDARD
+            var staleKvps = _entryLookup.Where(kvp => !kvp.Value.TryGetTarget(out _)).ToList();
+            #else
+            var staleKvps = _entryLookup.Where(kvp => !kvp.Value.TryGetTarget(out _));
+            #endif
+
+            foreach (var kvp in staleKvps)
                 _entryLookup.Remove(kvp.Key);
 
+            #if !NETSTANDARD2_0
             if (TrimExcessDuringClean)
                 TrimExcess();
+            #endif
 
             _addCountSinceLastClean = 0;
         }
@@ -234,12 +226,28 @@ namespace Singulink.Collections
         /// <summary>
         /// Reduces the internal capacity of this dictionary to the size needed to hold the current entries.
         /// </summary>
-        public void TrimExcess() => _entryLookup.TrimExcess();
+        /// <remarks>
+        /// <para>Calling this method on the .NET Standard 2.0 version of the library (i.e. on .NET Framework or .NET Core 2.2) has no effect.</para>
+        /// </remarks>
+        public void TrimExcess()
+        {
+            #if !NETSTANDARD2_0
+            _entryLookup.TrimExcess();
+            #endif
+        }
 
         /// <summary>
         /// Ensures that this dictionary can hold the specified number of elements without growing.
         /// </summary>
-        public void EnsureCapacity(int capacity) => _entryLookup.EnsureCapacity(capacity);
+        /// <remarks>
+        /// <para>Calling this method on the .NET Standard 2.0 version of the library (i.e. on .NET Framework or .NET Core 2.2) has no effect.</para>
+        /// </remarks>
+        public void EnsureCapacity(int capacity)
+        {
+            #if !NETSTANDARD2_0
+            _entryLookup.EnsureCapacity(capacity);
+            #endif
+        }
 
         /// <summary>
         /// Returns an enumerator that iterates through the key/value pairs in the dictionary.
@@ -249,11 +257,15 @@ namespace Singulink.Collections
             foreach (var kvp in _entryLookup) {
                 if (kvp.Value.TryGetTarget(out var value))
                     yield return new KeyValuePair<TKey, TValue>(kvp.Key, value);
+                #if NETCOREAPP
                 else
                     _entryLookup.Remove(kvp.Key);
+                #endif
             }
 
+            #if NETCOREAPP
             _addCountSinceLastClean = 0;
+            #endif
         }
 
         private void OnAdded()
