@@ -10,7 +10,7 @@ The following collections are included in the package:
 - `WeakCollection`: Collection of weakly referenced values that keeps items in an undefined order.
 - `WeakList`: Collection of weakly referenced values that maintains relative insertion order.
 - `WeakValueDictionary`: Collection of keys and weakly referenced values.
-- 
+
 ### About Singulink
 
 *Shameless plug*: We are a small team of engineers and designers dedicated to building beautiful, functional and well-engineered software solutions. We offer very competitive rates as well as fixed-price contracts and welcome inquiries to discuss any custom development / project support needs you may have.
@@ -21,17 +21,18 @@ This package is part of our **Singulink Libraries** collection. Visit https://gi
 
 The package is available on NuGet - simply install the `Singulink.Collections.Weak` package.
 
-**Supported Runtimes**: Anywhere .NET Standard 2.1+ is supported, including:
-- .NET Core 3.0+
-- Mono 6.4+
-- Xamarin.iOS 12.16+
-- Xamarin.Android 10.0+
+**Supported Runtimes**: Anywhere .NET Standard 2.0+ is supported, including:
+- .NET Core 2.0+
+- .NET Framework 4.6.1+
+- Mono 5.4+
+- Xamarin.iOS 10.14+
+- Xamarin.Android 8.0+
 
 ## Usage
 
-`WeakCollection` and `WeakDictionary` remove entries that point to values that were garbage collected as they are encountered, so if you regularly enumerate over all the values then additional cleaning may not be necessary. `WeakList` needs to have the `Clean()` method called periodically if you want to remove the entries that point to values that no longer exist from memory.
+On .NET Core 3+ and .NET 5+, `WeakCollection` and `WeakDictionary` remove entries that point to values that were garbage collected as they are encountered, so if you regularly enumerate over all the values then additional cleaning may not be necessary. `WeakList` needs to have the `Clean()` method called periodically if you want to remove entries that point to values that no longer exist from memory.
 
-Additionally, all the collections have the following properties to help with cleaning:
+All the collections have the following properties to help with cleaning:
 - `AutoCleanAddCount`: Sets the number of `Add` operations that automatically triggers the `Clean()` method to run.
 - `AddCountSinceLastClean`: Gets the number of add operations that have been performed since the last cleaning. Can be used by your code to implement more complex custom logic for triggering a cleaning.
 - `TrimExcessDuringClean`: Sets a value indicating whether to automatically call `TrimExcess()` whenever `Clean()` is called. Useful for keeping memory usage to a minimum when relying on the automatic cleaning functionality.
