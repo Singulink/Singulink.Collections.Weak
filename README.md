@@ -30,4 +30,4 @@ The package is available on NuGet - simply install the `Singulink.Collections.We
 
 ## Further Reading
 
-You can view the fully documented API on the [project documentation site](https://www.singulink.com/Docs/Singulink.Collections.Weak/).
+You can get more information and view the fully documented API on the [project documentation site](https://www.singulink.com/Docs/Singulink.Collections.Weak/).
