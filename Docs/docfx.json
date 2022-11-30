@@ -15,7 +15,16 @@
     }
   ],
   "build": {
-    "template": ["default", "templates/unity"],
+    "globalMetadata": {
+      "_appTitle": "Singulink.Collections.Weak",
+      "_appName": "Weak Collections",
+      "_appLogoPath": "images/logo.png",
+      "_appFaviconPath": "images/favicon.png",
+      "_copyrightFooter": "© Singulink. All rights reserved.",
+      "_enableSearch": true,
+      "_enableNewTab": true
+    },
+    "template": ["default", "templates/singulinkfx", "plugins/memberpage.2.59.0/content"],
     "xrefService": [ "https://xref.docs.microsoft.com/query?uid={uid}" ],
     "content": [
       {

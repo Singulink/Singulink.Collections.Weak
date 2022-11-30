@@ -1,4 +1,8 @@
+<div class="article">
+
 # Singulink.Collections.Weak
+
+## Summary
 
 **Singulink.Collections.Weak** provides a set of collection classes that store weak references to values so that the gargabe collector is free to reclaim the memory they use when they aren't being referenced from anywhere else anymore. The values returned by the collections will never be `null` - if the value was garbage collected then the collection behaves as if the value was removed from the collection.
 
@@ -17,11 +21,13 @@ All the collections have the following properties to help with cleaning:
 - `AutoCleanAddCount`: Sets the number of `Add()` operations that automatically triggers the `Clean()` method to run.
 - `AddCountSinceLastClean`: Gets the number of add operations that have been performed since the last cleaning. Can be used by your code to implement more complex custom logic for triggering a cleaning.
 - `TrimExcessDuringClean`: Sets a value indicating whether to automatically call `TrimExcess()` whenever `Clean()` is called. Useful for keeping memory usage to a minimum when relying on the automatic cleaning functionality.
-- 
+
 ## Information and Links
 
 Here are some additonal links to get you started:
 
 - [API Documentation](api/index.md) - Browse the fully documented API here.
-- [Chat on Gitter](https://gitter.im/Singulink/community) - Have questions or want to discuss the library? This is the place for all Singulink project discussions.
+- [Chat on Discord](https://discord.gg/EkQhJFsBu6) - Have questions or want to discuss the library? This is the place for all Singulink project discussions.
 - [Github Repo](https://github.com/Singulink/Singulink.Collections.Weak) - File issues, contribute pull requests or check out the code for yourself!
+
+</div>
